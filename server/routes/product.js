@@ -46,4 +46,33 @@ router.post('/', (req, res) => {
 })
 
 
+router.post('/products', (req, res) => {
+
+    let limit = req.body.limit ? parseInt(req.body.limit) : 100
+    let skip = req.body.skip ? parseInt(req.body.skip) : 0
+
+    let findArg = {}
+
+    for(let key in req.body.filters) {
+        console.log(key + " : " + req.body.filters[key].length)
+        if(req.body.filters[key].length > 0) {
+            findArg[key] = req.body.filters[key]
+        }
+
+    }
+
+    console.log('findArgs', findArg)
+
+    // 상품 List
+    Product.find(findArg)
+        .populate('writer')
+        .skip(skip)
+        .limit(limit)
+        .exec((err, items) => {
+            if(err) return res.status(400).json({success: false, err})
+            return res.status(200).json({success: true, postSize: items.length, items})
+        })
+
+})
+
 module.exports = router;
