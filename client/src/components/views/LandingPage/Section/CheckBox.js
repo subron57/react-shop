@@ -24,15 +24,15 @@ function CheckBox(props) {
 
     const renderCheckBoxLists = () => props.list && props.list.map((value, index) => (
             <React.Fragment key={index} >
-                <Checkbox onChange={() => handleToggle(value._id)} checked={Checked.indexOf(value._id) === -1 ? false : true}/>
-                    <span>{value.name}</span>
+                <Checkbox onChange={() => handleToggle(value._id)} checked={Checked.indexOf(value._id) === -1 ? false : true} style={{margin:'1rem auto'}}/>
+                    <span >{value.name}</span>
             </React.Fragment>
         ))
     
 
     return (
         <div>
-            <Collapse defaultActiveKey={['1']}>
+            <Collapse defaultActiveKey={['0']}>
                 <Panel header="Continents" key="1">
                     {renderCheckBoxLists()}
                 </Panel>

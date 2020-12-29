@@ -6,6 +6,7 @@ import ImageSlider from '../../utils/ImageSlider'
 import CheckBox from './Section/CheckBox'
 import RadioBox from './Section/RadioBox'
 import {continents, price} from './Section/Datas'
+import SearchFeature from './Section/SearchFeature'
 
 function LandingPage() {
 
@@ -17,6 +18,7 @@ function LandingPage() {
         continents: [],
         price: []
     })
+    const [SearchTerm, setSearchTerm] = useState("")
 
     useEffect(() => {
         let body = {
@@ -66,7 +68,7 @@ function LandingPage() {
         console.log('product', product)
         return  <Col lg={6} md={8} xs={24} key={index}>
                 <Card 
-                    cover={<ImageSlider images={product.images}/>}
+                    cover={<a href={`/product/${product._id}`}><ImageSlider images={product.images}/></a>}
                 >
                     <Meta 
                         title={product.title}
@@ -87,12 +89,44 @@ function LandingPage() {
         setSkip(0)
     }
 
+    const handlePrice = (value) => {
+        const data = price
+        let array = []
+
+        for(let key in data) {
+            if(data[key]._id === parseInt(value,10)) {
+                array = data[key].array
+            }
+        }
+        return array
+    }
+
     const handleFilters = (filters, category) => {
         const newFilters = { ...Filters }
         newFilters[category] = filters
 
         console.log(newFilters);
+
+        if(category === "price"){
+            let priceValues = handlePrice(filters)
+            newFilters[category] = priceValues
+        }
+
         showFilteredResult(newFilters)
+        setFilters(newFilters)
+    }
+
+    const updateSearchTerm = (newSearchTerm) => {
+        let body = {
+            skip: 0,
+            limit: Limit,
+            filters: Filters,
+            searchTerm: newSearchTerm
+        }
+
+        getProducts(body)
+        setSkip(0)
+        setSearchTerm(newSearchTerm)
     }
 
     return (
@@ -117,6 +151,9 @@ function LandingPage() {
                 </Row>
 
                 {/* Search */}
+                <div style={{ display: 'flex', justifyContent: 'flex-end', margin: '1rem auto'}}>
+                    <SearchFeature refreshFunction={updateSearchTerm}/>
+                </div>
 
                 {/* Cards */}
                 <Row gutter={16, 16}>
