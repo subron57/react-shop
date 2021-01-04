@@ -14,7 +14,7 @@ function DetailProductPage(props) {
         Axios.get(`/api/product/productById?id=${productId}&type=single`)
             .then(response => {
                 if(response.data.success) {
-                    console.log(response.data)
+                    //console.log(response.data)
                     setProduct(response.data.product[0])
                 } else {
                     alert('data get err');
