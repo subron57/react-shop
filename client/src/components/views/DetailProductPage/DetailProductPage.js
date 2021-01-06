@@ -13,14 +13,9 @@ function DetailProductPage(props) {
     useEffect(() => {
         Axios.get(`/api/product/productById?id=${productId}&type=single`)
             .then(response => {
-                if(response.data.success) {
-                    //console.log(response.data)
-                    setProduct(response.data.product[0])
-                } else {
-                    alert('data get err');
-                }
+                setProduct(response.data[0])
             })
-
+            .catch(err => alert(err))
     }, [])
 
     return (

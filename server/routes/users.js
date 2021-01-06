@@ -3,6 +3,9 @@ const router = express.Router();
 const { User } = require("../models/User");
 
 const { auth } = require("../middleware/auth");
+const { Product } = require('../models/Product');
+const { Payment } = require('../models/Payment');
+const async = require('async')
 
 //=================================
 //             User
@@ -115,6 +118,106 @@ router.post("/addToCart", auth, (req, res) => {
                 )
             }
         })
+
+});
+
+
+router.get("/removeFromCart", auth, (req, res) => {
+    // cart 안에 상품 삭제
+    User.findOneAndUpdate(
+        {_id: req.user._id},
+        {
+            "$pull":
+                { "cart" : { "id" : req.query.id}}
+        },
+        { new: true},
+        (err, userInfo) => {
+            let cart = userInfo.cart
+            let array = cart.map(item => {
+                return item.id
+            })
+
+            // product collection에서 남아있는 상품정보 가져오기
+            Product.find({ _id: { $in : array}})
+                .populate('writer')
+                .exec((err, productInfo) => {
+                    if (err) return res.status(400).send(err)
+                    res.status(200).json({
+                        productInfo, cart
+                    })
+                })
+        }
+    )
+});
+
+
+router.post("/successBuy", auth, (req, res) => {
+
+    // User collection : history 정보 insert
+    let history = []
+    let transactionData = {}
+
+    req.body.cartDetail.forEach((item) => {
+        history.push({
+            dateOfPurchase: Date.now(),
+            name: item.title,
+            id: item._id,
+            price: item.price,
+            quantity: item.quantity,
+            paymentId: req.body.paymentData.paymentID
+        })
+    })
+
+    // Payment collection 결제정보 insert
+    transactionData.user = {
+        id: req.user._id,
+        name: req.user.name,
+        email: req.user.email
+    }
+    transactionData.data = req.body.paymentData
+    transactionData.product = history
+
+    User.findOneAndUpdate(
+        {_id: req.user._id},
+        { $push: { history: history}, $set: { cart: []}},
+        { new: true},
+        (err, user) => {
+            if(err) return res.json({ success: false, err})
+            
+            // Payment 에 transactionData insert
+            const payment = new Payment(transactionData)
+            payment.save((err, doc) => {
+                if(err) return res.json({ success: false, err})
+
+                // Product collection sold update
+                let products = []
+                doc.product.forEach(item => {
+                    products.push({ id: item.id, quantity: item.quantity})
+                })
+
+                async.eachSeries(products, (item, callback) => {
+                    Product.updateOne(
+                        {_id: item.id},
+                        {
+                            $inc: {
+                                "sold" : item.quantity
+                            }
+                        },
+                        { new: false},
+                        callback
+                    )
+                }, (err) => {
+                    if(err) return res.json({ success: false, err})
+                    res.status(200).json({ success: true, cart: user.cart, cartDetail: []})
+                })
+                
+            })
+
+        }
+    )
+
+
+
 
 });
 
